@@ -1,0 +1,1632 @@
+<!-- PATIO 5S — Registro por zona con QR e historial -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#FFFFFF;
+    --panel:#F5F4F2;
+    --panel-2:#EBE9E6;
+    --line:#DDDAD5;
+    --ink:#1C1C1C;
+    --ink-dim:#6E6E6E;
+    --ink-dim2:#78746F;
+    --amber:#E35302;
+    --amber-ink:#FFFFFF;
+    --green:#2E8B4F;
+    --red:#C43A2F;
+    --yellow:#B8860B;
+  }
+  *{box-sizing:border-box;}
+  #p5s{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    max-width:480px;
+    margin:0 auto;
+    min-height:100%;
+    padding-bottom:90px;
+    position:relative;
+  }
+  #p5s .head{
+    padding:22px 18px 16px;
+    border-bottom:2px solid var(--amber);
+  }
+  #p5s .head-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:12px;
+  }
+  #p5s .qrbtn-single{
+    flex-shrink:0;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    color:var(--ink);
+    border-radius:8px;
+    padding:8px 14px;
+    font-size:12px;
+    font-weight:800;
+    letter-spacing:.04em;
+    cursor:pointer;
+  }
+  #p5s .eyebrow{
+    font-size:11px;
+    letter-spacing:.14em;
+    color:var(--amber);
+    font-weight:700;
+    margin:0 0 4px;
+  }
+  #p5s h1{
+    margin:0;
+    font-size:22px;
+    font-weight:800;
+    letter-spacing:-0.01em;
+    line-height:1.15;
+  }
+  #p5s .sub{
+    margin:6px 0 0;
+    font-size:13px;
+    color:var(--ink-dim2);
+  }
+
+  #p5s .tabs{
+    display:flex;
+    margin:14px 18px 0;
+    background:var(--panel);
+    border-radius:10px;
+    padding:4px;
+    gap:4px;
+  }
+  #p5s .tab{
+    flex:1;
+    text-align:center;
+    padding:10px 6px;
+    font-size:13px;
+    font-weight:700;
+    color:var(--ink-dim2);
+    border-radius:7px;
+    cursor:pointer;
+    user-select:none;
+  }
+  #p5s .tab.active{
+    background:var(--amber);
+    color:var(--amber-ink);
+  }
+
+  #p5s .zonebar{
+    margin:16px 18px 0;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:14px;
+  }
+  #p5s .zonebar-label{
+    font-size:11px;
+    letter-spacing:.1em;
+    color:var(--ink-dim2);
+    font-weight:700;
+    margin-bottom:8px;
+  }
+  #p5s select, #p5s input[type=text]{
+    width:100%;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    color:var(--ink);
+    padding:11px 12px;
+    border-radius:8px;
+    font-size:15px;
+    font-family:inherit;
+  }
+  #p5s .zone-row{
+    display:flex;
+    gap:8px;
+    align-items:center;
+  }
+  #p5s .zone-row + .zone-row{
+    margin-top:8px;
+  }
+  #p5s .zone-row select{flex:1;}
+  #p5s .qrbtn{
+    flex-shrink:0;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    color:var(--ink);
+    border-radius:8px;
+    padding:0 12px;
+    height:44px;
+    font-size:13px;
+    font-weight:700;
+    cursor:pointer;
+  }
+  #p5s .status-chip{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    margin-top:10px;
+    font-size:12px;
+    color:var(--ink-dim2);
+  }
+  #p5s .dot{width:8px;height:8px;border-radius:50%;background:var(--ink-dim2);}
+  #p5s .dot.green{background:var(--green);}
+  #p5s .dot.yellow{background:var(--yellow);}
+  #p5s .dot.red{background:var(--red);}
+
+  #p5s .meta{
+    margin:14px 18px 0;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+  #p5s .meta .field{grid-column:span 1;}
+  #p5s .meta .field.full{grid-column:1/-1;}
+  #p5s .field label{
+    display:block;
+    font-size:10.5px;
+    letter-spacing:.08em;
+    color:var(--ink-dim2);
+    font-weight:700;
+    margin-bottom:5px;
+  }
+
+  #p5s .crit-card{
+    margin:12px 18px 0;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:14px;
+  }
+  #p5s .crit-text{
+    font-size:13.5px;
+    line-height:1.48;
+    margin-bottom:11px;
+    color:var(--ink);
+  }
+  #p5s .crit-num{
+    color:var(--amber);
+    font-weight:800;
+    margin-right:6px;
+  }
+  #p5s .pills{
+    display:flex;
+    gap:6px;
+  }
+  #p5s .pill{
+    flex:1;
+    text-align:center;
+    padding:9px 4px;
+    border-radius:7px;
+    border:1px solid var(--line);
+    background:var(--panel-2);
+    font-size:12px;
+    font-weight:800;
+    color:var(--ink-dim2);
+    cursor:pointer;
+  }
+  #p5s .pill[data-v="2"]{border-color:var(--green);color:var(--green);}
+  #p5s .pill[data-v="0"]{border-color:var(--red);color:var(--red);}
+  #p5s .pill.sel-2{background:var(--green);border-color:var(--green);color:#FFFFFF;}
+  #p5s .pill.sel-0{background:var(--red);border-color:var(--red);color:#FFFFFF;}
+
+  #p5s .photo-row{
+    margin-top:11px;
+  }
+  #p5s .photo-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    background:var(--panel-2);
+    border:1px dashed var(--ink-dim2);
+    color:var(--ink-dim2);
+    border-radius:8px;
+    padding:8px 12px;
+    font-size:12px;
+    font-weight:700;
+    cursor:pointer;
+  }
+  #p5s .photo-input{display:none;}
+  #p5s .photo-preview{
+    position:relative;
+    display:inline-block;
+    margin-top:8px;
+  }
+  #p5s .photo-preview img{
+    width:84px;
+    height:84px;
+    object-fit:cover;
+    border-radius:8px;
+    border:1px solid var(--line);
+    display:block;
+  }
+  #p5s .photo-remove{
+    position:absolute;
+    top:-6px;
+    right:-6px;
+    width:20px;
+    height:20px;
+    border-radius:50%;
+    background:var(--red);
+    color:#fff;
+    border:2px solid var(--bg);
+    font-size:12px;
+    font-weight:800;
+    line-height:16px;
+    text-align:center;
+    cursor:pointer;
+  }
+
+  #p5s .obs{
+    margin-top:12px;
+  }
+  #p5s .obs label{
+    display:block;
+    font-size:10.5px;
+    letter-spacing:.06em;
+    color:var(--ink-dim2);
+    font-weight:700;
+    margin-bottom:5px;
+  }
+  #p5s textarea{
+    width:100%;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    color:var(--ink);
+    padding:10px 11px;
+    border-radius:8px;
+    font-size:13.5px;
+    font-family:inherit;
+    resize:vertical;
+    min-height:52px;
+  }
+
+  #p5s .summary{
+    margin:16px 18px 0;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:16px;
+  }
+  #p5s .summary-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    margin-bottom:8px;
+  }
+  #p5s .summary-row:last-child{margin-bottom:0;}
+  #p5s .summary-label{font-size:12.5px;color:var(--ink-dim2);}
+  #p5s .summary-val{font-size:20px;font-weight:800;}
+  #p5s .summary-val.big{font-size:30px;color:var(--amber);}
+
+  #p5s .savebar{
+    position:sticky;
+    bottom:0;
+    margin-top:18px;
+    padding:14px 18px 20px;
+    background:linear-gradient(180deg, rgba(25,27,28,0) 0%, var(--bg) 30%);
+  }
+  #p5s .save-btn{
+    width:100%;
+    background:var(--amber);
+    color:var(--amber-ink);
+    border:none;
+    padding:15px;
+    border-radius:10px;
+    font-size:15px;
+    font-weight:800;
+    cursor:pointer;
+    letter-spacing:-0.01em;
+  }
+  #p5s .save-btn:disabled{
+    background:var(--panel-2);
+    color:var(--ink-dim2);
+  }
+  #p5s .save-msg{
+    text-align:center;
+    font-size:12px;
+    color:var(--green);
+    margin-top:8px;
+    min-height:14px;
+    font-weight:700;
+  }
+
+  /* HISTORY */
+  #p5s .hist-list{
+    margin:14px 18px 0;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  #p5s .hist-card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:14px;
+  }
+  #p5s .hist-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:10px;
+  }
+  #p5s .hist-pct{
+    font-size:24px;
+    font-weight:800;
+  }
+  #p5s .hist-badge{
+    font-size:10.5px;
+    font-weight:800;
+    letter-spacing:.05em;
+    padding:4px 8px;
+    border-radius:6px;
+    margin-top:3px;
+    display:inline-block;
+  }
+  #p5s .hist-badge.green{background:rgba(46,139,79,.12);color:var(--green);}
+  #p5s .hist-badge.yellow{background:rgba(184,134,11,.12);color:var(--yellow);}
+  #p5s .hist-badge.red{background:rgba(196,58,47,.12);color:var(--red);}
+  #p5s .hist-meta{
+    text-align:right;
+    font-size:12px;
+    color:var(--ink-dim2);
+    line-height:1.5;
+  }
+  #p5s .hist-toggle{
+    margin-top:10px;
+    font-size:12px;
+    color:var(--amber);
+    font-weight:700;
+    cursor:pointer;
+  }
+  #p5s .hist-detail{
+    display:none;
+    margin-top:10px;
+    padding-top:10px;
+    border-top:1px solid var(--line);
+  }
+  #p5s .hist-detail.open{display:block;}
+  #p5s .hist-item-row{
+    display:flex;
+    justify-content:space-between;
+    gap:8px;
+    font-size:12px;
+    padding:6px 0;
+    border-bottom:1px solid rgba(255,255,255,0.05);
+  }
+  #p5s .hist-item-row .t{color:var(--ink-dim2); flex:1;}
+  #p5s .hist-item-row .s{font-weight:800; flex-shrink:0;}
+  #p5s .hist-item-row .s.g{color:var(--green);}
+  #p5s .hist-item-row .s.y{color:var(--yellow);}
+  #p5s .hist-item-row .s.r{color:var(--red);}
+  #p5s .hist-item-row .s.n{color:var(--ink-dim2);}
+  #p5s .hist-photo{
+    width:64px;
+    height:64px;
+    object-fit:cover;
+    border-radius:6px;
+    border:1px solid var(--line);
+    margin:4px 0 8px;
+    display:block;
+    cursor:pointer;
+  }
+  #p5s .photo-modal{
+    display:none;
+    position:absolute;
+    inset:0;
+    background:rgba(0,0,0,.85);
+    z-index:30;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  #p5s .photo-modal.open{display:flex;}
+  #p5s .photo-modal img{
+    max-width:100%;
+    max-height:78vh;
+    border-radius:10px;
+    display:block;
+  }
+  #p5s .photo-modal-close{
+    position:absolute;
+    top:18px;
+    right:18px;
+    width:36px;
+    height:36px;
+    border-radius:50%;
+    background:rgba(255,255,255,.15);
+    color:#fff;
+    border:none;
+    font-size:18px;
+    font-weight:800;
+    cursor:pointer;
+  }
+  #p5s .hist-obs{
+    font-size:11.5px;
+    color:var(--ink-dim2);
+    padding-left:0;
+    margin:2px 0 6px;
+    font-style:italic;
+  }
+
+  #p5s .trend{
+    margin:14px 18px 0;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:14px;
+  }
+  #p5s .trend-label{
+    font-size:11px;
+    letter-spacing:.08em;
+    color:var(--ink-dim2);
+    font-weight:700;
+    margin-bottom:10px;
+  }
+  #p5s .trend-row{
+    display:flex;
+    align-items:flex-end;
+    gap:6px;
+    height:60px;
+  }
+  #p5s .trend-bar{
+    flex:1;
+    background:var(--panel-2);
+    border-radius:4px 4px 0 0;
+    position:relative;
+    min-height:4px;
+  }
+  #p5s .trend-bar span{
+    position:absolute;
+    top:-16px;
+    left:0;
+    right:0;
+    text-align:center;
+    font-size:9px;
+    color:var(--ink-dim2);
+    font-weight:700;
+  }
+
+  #p5s .empty{
+    margin:30px 18px;
+    text-align:center;
+    color:var(--ink-dim2);
+    font-size:13px;
+    line-height:1.6;
+  }
+
+  /* PANEL DE CONTROL */
+  #p5s .panel-intro{
+    margin:14px 18px 0;
+    font-size:12.5px;
+    color:var(--ink-dim2);
+    line-height:1.5;
+  }
+  #p5s .filterbar{
+    margin:14px 18px 0;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:14px;
+  }
+  #p5s .filterbar-label{
+    font-size:10.5px;
+    letter-spacing:.08em;
+    color:var(--ink-dim2);
+    font-weight:700;
+    margin-bottom:8px;
+  }
+  #p5s .filterbar select{
+    width:100%;
+  }
+  #p5s .period-pills{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+  }
+  #p5s .period-pill{
+    padding:8px 12px;
+    border-radius:7px;
+    border:1px solid var(--line);
+    background:var(--panel-2);
+    font-size:12px;
+    font-weight:700;
+    color:var(--ink-dim2);
+    cursor:pointer;
+  }
+  #p5s .period-pill.active{
+    background:var(--amber);
+    border-color:var(--amber);
+    color:var(--amber-ink);
+  }
+  #p5s .custom-range{
+    display:flex;
+    gap:8px;
+    margin-top:10px;
+  }
+  #p5s .custom-range .field{flex:1;}
+  #p5s .custom-range input[type=date]{
+    width:100%;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    color:var(--ink);
+    padding:9px 10px;
+    border-radius:8px;
+    font-size:13px;
+    font-family:inherit;
+  }
+
+  #p5s .kpi-grid{
+    margin:14px 18px 0;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+  }
+  #p5s .kpi-card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:14px;
+  }
+  #p5s .kpi-val{
+    font-size:22px;
+    font-weight:800;
+    color:var(--amber);
+    line-height:1.1;
+  }
+  #p5s .kpi-label{
+    font-size:11px;
+    color:var(--ink-dim2);
+    margin-top:5px;
+    line-height:1.35;
+  }
+
+  #p5s .chart-box{
+    margin:14px 18px 0;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:14px;
+  }
+  #p5s .chart-title{
+    font-size:11px;
+    letter-spacing:.06em;
+    color:var(--ink-dim2);
+    font-weight:700;
+    margin-bottom:12px;
+  }
+  #p5s .chart-canvas-wrap{
+    position:relative;
+    width:100%;
+    height:220px;
+  }
+  #p5s .chart-canvas-wrap canvas{
+    width:100% !important;
+    height:100% !important;
+  }
+  #p5s .chart-empty-msg{
+    color:var(--ink-dim2);
+    font-size:12.5px;
+    text-align:center;
+    padding:30px 10px;
+  }
+
+  #p5s .qr-modal{
+    display:none;
+    position:absolute;
+    inset:0;
+    background:rgba(0,0,0,.75);
+    z-index:20;
+    align-items:center;
+    justify-content:center;
+  }
+  #p5s .qr-modal.open{display:flex;}
+  #p5s .qr-card{
+    background:#fff;
+    border-radius:14px;
+    padding:22px;
+    width:78%;
+    text-align:center;
+  }
+  #p5s .qr-card .qz{
+    color:#161616;
+    font-weight:800;
+    font-size:14px;
+    margin-bottom:12px;
+  }
+  #p5s #qrcanvas{display:flex;justify-content:center;margin-bottom:12px;}
+  #p5s .qr-card .qhint{
+    color:#666;
+    font-size:11px;
+    margin-bottom:14px;
+    line-height:1.5;
+  }
+  #p5s .qr-close{
+    background:var(--bg);
+    color:var(--ink);
+    border:none;
+    padding:10px 20px;
+    border-radius:8px;
+    font-size:13px;
+    font-weight:700;
+    cursor:pointer;
+  }
+</style>
+
+<div id="p5s">
+  <div class="head">
+    <div class="head-top">
+      <div>
+        <p class="eyebrow">SOSTENIBILIDAD 5S · BODEGAS Y PATIOS</p>
+        <h1>Cartilla de verificación de 5S</h1>
+      </div>
+      <button class="qrbtn-single" id="showQr">QR</button>
+    </div>
+    <p class="sub">Creamos un ambiente mediante el cual podemos ejecutar nuestros procesos de forma segura y confiable con un mínimo de desperdicios.</p>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="registro">Registro</div>
+    <div class="tab" data-tab="panel">Panel</div>
+    <div class="tab" data-tab="historial">Historial</div>
+  </div>
+
+  <div class="zonebar" id="zonebar">
+    <div class="zonebar-label">UBICACIÓN</div>
+    <div class="zone-row">
+      <select id="locationSelect"></select>
+    </div>
+    <div class="zone-row" id="subzoneRow">
+      <select id="subzoneSelect"></select>
+    </div>
+    <div class="status-chip" id="subzoneCount"><span class="dot"></span><span>Cargando…</span></div>
+    <div class="zone-row" id="storageRow" style="margin-top:8px; flex-direction:column; align-items:stretch;">
+      <label style="display:block; font-size:10.5px; letter-spacing:.08em; color:var(--ink-dim2); font-weight:700; margin-bottom:5px;">NÚMERO DE RACK O PASILLO EVALUADO</label>
+      <input type="text" id="storageInput" placeholder="Ej: 3010">
+    </div>
+    <div class="status-chip" id="zoneStatus"><span class="dot"></span><span>Sin registros aún</span></div>
+  </div>
+
+  <!-- REGISTRO TAB -->
+  <div id="tab-registro">
+    <div class="meta">
+      <div class="field full"><label>Fecha</label><input type="text" id="fecha" readonly></div>
+      <div class="field full"><label>Auditor</label><input type="text" id="auditor" placeholder="Nombre"></div>
+    </div>
+
+    <div id="sections"></div>
+
+    <div class="summary">
+      <div class="summary-row"><span class="summary-label">Puntaje obtenido</span><span class="summary-val" id="sumScore">0 / 0</span></div>
+      <div class="summary-row"><span class="summary-label">% de cumplimiento</span><span class="summary-val big" id="sumPct">0%</span></div>
+    </div>
+
+    <div class="savebar">
+      <button class="save-btn" id="saveBtn">Guardar registro de esta zona</button>
+      <div class="save-msg" id="saveMsg"></div>
+    </div>
+  </div>
+
+  <!-- HISTORIAL TAB -->
+  <div id="tab-historial" style="display:none;">
+    <div class="trend" id="trendBox" style="display:none;">
+      <div class="trend-label">TENDENCIA — ÚLTIMOS REGISTROS</div>
+      <div class="trend-row" id="trendRow"></div>
+    </div>
+    <div class="hist-list" id="histList"></div>
+    <div class="empty" id="histEmpty" style="display:none;">Aún no hay registros guardados para esta zona.</div>
+  </div>
+
+  <!-- PANEL DE CONTROL TAB -->
+  <div id="tab-panel" style="display:none;">
+    <div class="panel-intro">
+      <p>Vista agregada de todas las ubicaciones, subzonas y storages evaluados — para seguimiento de gestión y toma de decisiones.</p>
+    </div>
+
+    <div class="filterbar">
+      <div class="filterbar-label">PERIODO</div>
+      <div class="period-pills" id="periodPills">
+        <div class="period-pill" data-p="w">Semanal</div>
+        <div class="period-pill active" data-p="q">Trimestral</div>
+        <div class="period-pill" data-p="s">Semestral</div>
+        <div class="period-pill" data-p="y">Anual</div>
+        <div class="period-pill" data-p="c">Personalizado</div>
+      </div>
+      <div class="custom-range" id="customRange" style="display:none;">
+        <div class="field"><label>Desde</label><input type="date" id="dateFrom"></div>
+        <div class="field"><label>Hasta</label><input type="date" id="dateTo"></div>
+      </div>
+      <div class="filterbar-label" style="margin-top:12px;">UBICACIÓN</div>
+      <select id="panelLocationFilter"></select>
+      <div class="filterbar-label" style="margin-top:12px;">SUBZONA</div>
+      <select id="panelSubzoneFilter"></select>
+    </div>
+
+    <div class="kpi-grid" id="kpiGrid"></div>
+
+    <div class="chart-box">
+      <div class="chart-title">TENDENCIA DE CUMPLIMIENTO EN EL TIEMPO</div>
+      <div class="chart-canvas-wrap" id="wrap-chartTrend"><canvas id="chartTrend"></canvas></div>
+    </div>
+
+    <div class="chart-box">
+      <div class="chart-title">% CUMPLIMIENTO POR UBICACIÓN</div>
+      <div class="chart-canvas-wrap" id="wrap-chartLocations"><canvas id="chartLocations"></canvas></div>
+    </div>
+
+    <div class="chart-box">
+      <div class="chart-title">CRITERIOS CON MÁS INCUMPLIMIENTOS (P = Patio, B = Bodega)</div>
+      <div class="chart-canvas-wrap" id="wrap-chartCriteria"><canvas id="chartCriteria"></canvas></div>
+    </div>
+
+    <div class="chart-box">
+      <div class="chart-title">VOLUMEN DE EVALUACIONES POR SUBZONA</div>
+      <div class="chart-canvas-wrap" id="wrap-chartVolume"><canvas id="chartVolume"></canvas></div>
+    </div>
+
+    <div class="empty" id="panelEmpty" style="display:none;">Aún no hay evaluaciones registradas en el periodo seleccionado.</div>
+  </div>
+
+  <div class="qr-modal" id="qrModal">
+    <div class="qr-card">
+      <div class="qz">Código QR de la aplicación</div>
+      <div id="qrcanvas"></div>
+      <div class="qhint">Un solo código, instalado a la entrada del patio, da acceso a la app completa. Dentro, cada persona elige su ubicación, subzona y storage antes de registrar.</div>
+      <button class="qr-close" id="qrClose">Cerrar</button>
+    </div>
+  </div>
+
+  <div class="photo-modal" id="photoModal">
+    <button class="photo-modal-close" id="photoModalClose">✕</button>
+    <img id="photoModalImg" src="" alt="Evidencia fotográfica ampliada">
+  </div>
+</div>
+
+<script>
+(function(){
+  const PATIO_CRITERIOS = [
+    "El área cuenta con señaléticas, delimitaciones y segregación consistentes.",
+    "Cada material almacenado se encuentra identificado con su respectivo código de material y ubicación de almacenamiento.",
+    "Los materiales están ubicados dentro del espacio establecido de cada isla de almacenamiento.",
+    "Los materiales almacenados se encuentran agrupados por códigos de stock.",
+    "Entre los materiales almacenados hay espacio disponible para el tránsito peatonal seguro.",
+    "Las calles de tránsito de grúa horquilla se encuentran libres de obstáculos.",
+    "En el área no se identifican residuos, desechos o materiales que no correspondan al área (pallets o cajas dañadas abandonados, materiales de otra ubicación, zunchos, plásticos, etc.).",
+    "Los materiales se encuentran palletizados y enzunchados de forma segura.",
+    "En el área no se identifican materiales sin preservación, dañados u obsoletos por condición climática."
+  ];
+
+  const BODEGA_CRITERIOS = [
+    "La ubicación cuenta con señaléticas respectivas (Rack y Storage Bin).",
+    "Cada material almacenado se encuentra identificado con su respectivo código de material y ubicación.",
+    "Los materiales están ubicados dentro del espacio delimitado.",
+    "Los materiales almacenados se encuentran agrupados por códigos de stock.",
+    "Pasillo se encuentra libre de obstáculos.",
+    "En el área no se identifican residuos, desechos o materiales que no correspondan al área (pallets o cajas dañadas abandonados, materiales de otra ubicación, zunchos, plásticos, etc.).",
+    "No hay materiales con riesgo de caída desde altura (estándar de almacenamiento).",
+    "Jaulas con puertas cerradas y con seguro.",
+    "En el área no se identifican materiales sin preservación, dañados u obsoletos por condición climática.",
+    "Luminarias en el área se encuentran operativas y con retención secundaria.",
+    "El área cuenta con elementos de delimitación/segregación necesarias.",
+    "El rack cuenta con etiqueta adhesiva de revisión mensual actualizada."
+  ];
+
+  const CRITERIA_LABELS = {};
+  PATIO_CRITERIOS.forEach((t,i) => CRITERIA_LABELS[t] = 'P'+(i+1));
+  BODEGA_CRITERIOS.forEach((t,i) => CRITERIA_LABELS[t] = 'B'+(i+1));
+
+  function isBodega(loc){ return (loc||'').startsWith('Bodega'); }
+  function currentCriterios(){
+    return isBodega(locationSelect.value) ? BODEGA_CRITERIOS : PATIO_CRITERIOS;
+  }
+
+  const root = document.getElementById('p5s');
+  const locationSelect = root.querySelector('#locationSelect');
+  const subzoneSelect = root.querySelector('#subzoneSelect');
+  const storageInput = root.querySelector('#storageInput');
+  const sectionsEl = root.querySelector('#sections');
+  const fechaEl = root.querySelector('#fecha');
+  let currentAnswers = {}; // key: "s{si}-i{ii}" -> score
+
+  const todayStr = () => {
+    const d = new Date();
+    return d.toLocaleDateString('es-CL', {year:'numeric', month:'2-digit', day:'2-digit'});
+  };
+  fechaEl.value = todayStr();
+
+  // ---------- LOCATIONS ----------
+  function lettersTo(last){
+    const start = 'A'.charCodeAt(0), end = last.charCodeAt(0);
+    const out = [];
+    for(let c = start; c <= end; c++) out.push(String.fromCharCode(c));
+    return out;
+  }
+  const LOCATIONS_CONFIG = {
+    "Bodega Mina": lettersTo('F'),
+    "Bodega Planta": lettersTo('E'),
+    "Bodega Laguna Seca": lettersTo('C'),
+    "Patio 3000": lettersTo('E'),
+    "Patio W9": lettersTo('F')
+  };
+  const LOCATIONS = Object.keys(LOCATIONS_CONFIG);
+
+  function slug(s){
+    return s.toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .replace(/[^a-z0-9]+/g,'-')
+      .replace(/(^-|-$)/g,'');
+  }
+  function currentZone(){
+    const loc = locationSelect.value;
+    const sub = subzoneSelect.value;
+    const storage = storageInput.value.trim();
+    const locSlug = slug(loc);
+    const subLetter = sub.toLowerCase();
+    const storageSlug = storage ? slug(storage) : '';
+    const id = locSlug + '-' + subLetter + (storageSlug ? '-' + storageSlug : '');
+    const name = loc + ` – Zona ${sub}` + (storage ? ` – ${storage}` : '');
+    return {id, name, storage, locSlug, subLetter, storageSlug};
+  }
+
+  // ---------- FIREBASE (Realtime Database) ----------
+  const FIREBASE_URL = 'https://fir-warehouse-evaluacion-default-rtdb.firebaseio.com';
+
+  async function fbSet(path, value){
+    try{
+      const res = await fetch(`${FIREBASE_URL}/${path}.json`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(value)
+      });
+      return res.ok;
+    }catch(e){ return false; }
+  }
+  async function fbGet(path){
+    try{
+      const res = await fetch(`${FIREBASE_URL}/${path}.json`);
+      if(!res.ok) return null;
+      return await res.json();
+    }catch(e){ return null; }
+  }
+
+  // Flattens a { timestamp: record } object into a sorted array of records.
+  function flattenTimestampMap(obj){
+    if(!obj) return [];
+    return Object.values(obj);
+  }
+  // Flattens the full tree { loc: { sub: { storageSlug: { timestamp: record } } } } into a flat array.
+  function flattenFullTree(tree){
+    const out = [];
+    if(!tree) return out;
+    Object.values(tree).forEach(subMap => {
+      Object.values(subMap || {}).forEach(storageMap => {
+        Object.values(storageMap || {}).forEach(tsMap => {
+          Object.values(tsMap || {}).forEach(record => out.push(record));
+        });
+      });
+    });
+    return out;
+  }
+  // Flattens { storageSlug: { timestamp: record } } into a flat array (all storages within a subzone).
+  function flattenSubzoneTree(subMap){
+    const out = [];
+    if(!subMap) return out;
+    Object.values(subMap).forEach(tsMap => {
+      Object.values(tsMap || {}).forEach(record => out.push(record));
+    });
+    return out;
+  }
+
+  function renderSubzoneOptions(){
+    const loc = locationSelect.value;
+    const letters = LOCATIONS_CONFIG[loc] || [];
+    subzoneSelect.innerHTML = letters.map(s => `<option value="${s}">Zona ${s}</option>`).join('');
+  }
+  function initLocationSelects(){
+    locationSelect.innerHTML = LOCATIONS.map(l => `<option value="${l}">${l}</option>`).join('');
+    renderSubzoneOptions();
+  }
+  locationSelect.addEventListener('change', () => {
+    renderSubzoneOptions();
+    onZoneChange();
+  });
+  subzoneSelect.addEventListener('change', onZoneChange);
+  storageInput.addEventListener('change', onZoneChange);
+  storageInput.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter'){ storageInput.blur(); }
+  });
+
+  // ---------- FORM ----------
+  let currentPhotos = {}; // key: index -> dataURL
+
+  function resetAnswers(){
+    currentAnswers = {};
+    currentPhotos = {};
+    currentCriterios().forEach((_, i) => currentAnswers[i] = null);
+  }
+
+  function compressImage(file){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const maxW = 480;
+          const scale = Math.min(1, maxW / img.width);
+          const w = Math.round(img.width * scale);
+          const h = Math.round(img.height * scale);
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', 0.55));
+        };
+        img.onerror = reject;
+        img.src = e.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function renderPhotoRow(i){
+    const has = !!currentPhotos[i];
+    return `
+      <div class="photo-row" id="photorow-${i}">
+        ${has ? `
+          <div class="photo-preview">
+            <img src="${currentPhotos[i]}" data-i="${i}" class="photo-view">
+            <div class="photo-remove" data-i="${i}">✕</div>
+          </div>
+        ` : `
+          <label class="photo-btn">
+            📷 Adjuntar fotografía
+            <input type="file" accept="image/*" capture="environment" class="photo-input" data-i="${i}">
+          </label>
+        `}
+      </div>
+    `;
+  }
+
+  function renderSections(){
+    sectionsEl.innerHTML = '';
+    currentCriterios().forEach((txt, i) => {
+      const box = document.createElement('div');
+      box.className = 'crit-card';
+      box.id = 'critcard-'+i;
+      box.innerHTML = `
+        <div class="crit-text"><span class="crit-num">${i+1}</span>${txt}</div>
+        <div class="pills" data-i="${i}">
+          <div class="pill" data-v="2">Cumple</div>
+          <div class="pill" data-v="0">No cumple</div>
+        </div>
+        ${renderPhotoRow(i)}
+        <div class="obs">
+          <label>Observaciones</label>
+          <textarea id="obs-${i}" placeholder="Detalle, evidencia adicional..."></textarea>
+        </div>
+      `;
+      sectionsEl.appendChild(box);
+    });
+
+    sectionsEl.querySelectorAll('.pills').forEach(p => {
+      p.addEventListener('click', (e) => {
+        const pill = e.target.closest('.pill');
+        if(!pill) return;
+        const i = p.dataset.i, v = pill.dataset.v;
+        currentAnswers[i] = parseInt(v);
+        p.querySelectorAll('.pill').forEach(x => x.classList.remove('sel-2','sel-0'));
+        pill.classList.add('sel-'+v);
+        updateSummary();
+      });
+    });
+
+    bindPhotoHandlers();
+  }
+
+  function bindPhotoHandlers(){
+    currentCriterios().forEach((_, i) => bindPhotoRowHandlers(i));
+  }
+
+  function bindPhotoRowHandlers(i){
+    const row = root.querySelector('#photorow-'+i);
+    if(!row) return;
+    const inp = row.querySelector('.photo-input');
+    if(inp){
+      inp.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if(!file) return;
+        try{
+          const dataUrl = await compressImage(file);
+          currentPhotos[i] = dataUrl;
+          root.querySelector('#photorow-'+i).outerHTML = renderPhotoRow(i);
+          bindPhotoRowHandlers(i);
+        }catch(err){}
+      });
+    }
+    const rm = row.querySelector('.photo-remove');
+    if(rm){
+      rm.addEventListener('click', () => {
+        delete currentPhotos[i];
+        root.querySelector('#photorow-'+i).outerHTML = renderPhotoRow(i);
+        bindPhotoRowHandlers(i);
+      });
+    }
+  }
+
+  function updateSummary(){
+    let sum=0, max=0;
+    Object.values(currentAnswers).forEach(v => {
+      if(v === null || v === undefined) return;
+      sum += v; max += 2;
+    });
+    root.querySelector('#sumScore').textContent = sum+' / '+max;
+    const pct = max===0 ? 0 : Math.round((sum/max)*100);
+    root.querySelector('#sumPct').textContent = pct+'%';
+  }
+
+  root.querySelector('#saveBtn').addEventListener('click', async () => {
+    const zone = currentZone();
+    const zoneId = zone.id;
+
+    if(!zone.storage){
+      root.querySelector('#saveMsg').style.color = 'var(--red)';
+      root.querySelector('#saveMsg').textContent = 'Indica el número de rack o pasillo antes de guardar.';
+      return;
+    }
+
+    let sum=0, max=0, allAnswered=true;
+    Object.values(currentAnswers).forEach(v => {
+      if(v === null || v === undefined) { allAnswered = false; return; }
+      sum += v; max += 2;
+    });
+    if(!allAnswered){
+      root.querySelector('#saveMsg').style.color = 'var(--red)';
+      root.querySelector('#saveMsg').textContent = 'Responde todos los puntos antes de guardar.';
+      return;
+    }
+
+    const record = {
+      zoneId, zoneName: zone.name,
+      fecha: fechaEl.value,
+      auditor: root.querySelector('#auditor').value || '(sin nombre)',
+      timestamp: Date.now(),
+      score: sum, max: max,
+      pct: max===0?0:Math.round((sum/max)*100),
+      detail: currentCriterios().map((txt, i) => ({
+        texto: txt,
+        valor: currentAnswers[i],
+        foto: currentPhotos[i] || null,
+        obs: root.querySelector('#obs-'+i).value
+      }))
+    };
+
+    const path = `registros/${zone.locSlug}/${zone.subLetter}/${zone.storageSlug}/${record.timestamp}`;
+    const ok = await fbSet(path, record);
+    if(ok){
+      root.querySelector('#saveMsg').style.color = 'var(--green)';
+      root.querySelector('#saveMsg').textContent = '✓ Registro guardado para ' + zone.name;
+      resetAnswers();
+      renderSections();
+      root.querySelector('#auditor').value = '';
+      updateSummary();
+      loadZoneStatus();
+      loadSubzoneCount();
+    }else{
+      root.querySelector('#saveMsg').style.color = 'var(--red)';
+      root.querySelector('#saveMsg').textContent = 'No se pudo guardar. Revisa tu conexión e intenta nuevamente.';
+    }
+  });
+
+  // ---------- ZONE STATUS CHIP ----------
+  async function loadZoneStatus(){
+    const zone = currentZone();
+    const chip = root.querySelector('#zoneStatus');
+    if(!zone.storageSlug){
+      chip.innerHTML = `<span class="dot"></span><span>Sin registros aún</span>`;
+      return;
+    }
+    const tsMap = await fbGet(`registros/${zone.locSlug}/${zone.subLetter}/${zone.storageSlug}`);
+    const records = flattenTimestampMap(tsMap);
+    if(records.length === 0){
+      chip.innerHTML = `<span class="dot"></span><span>Sin registros aún</span>`;
+      return;
+    }
+    records.sort((a,b) => b.timestamp - a.timestamp);
+    const last = records[0];
+    const cls = last.pct >= 90 ? 'green' : (last.pct >= 70 ? 'yellow' : 'red');
+    chip.innerHTML = `<span class="dot ${cls}"></span><span>Último registro: ${last.pct}% — ${last.fecha}</span>`;
+  }
+
+  // ---------- SUBZONE EVALUATION COUNT ----------
+  async function loadSubzoneCount(){
+    const loc = locationSelect.value;
+    const sub = subzoneSelect.value;
+    const chip = root.querySelector('#subzoneCount');
+    if(!loc || !sub){
+      chip.innerHTML = `<span class="dot"></span><span>—</span>`;
+      return;
+    }
+    const subMap = await fbGet(`registros/${slug(loc)}/${sub.toLowerCase()}`);
+    const count = flattenSubzoneTree(subMap).length;
+    const label = count === 1 ? 'evaluación registrada' : 'evaluaciones registradas';
+    const cls = count === 0 ? '' : (count < 3 ? 'yellow' : 'green');
+    chip.innerHTML = `<span class="dot ${cls}"></span><span>${count} ${label} en ${loc} – Zona ${sub}</span>`;
+  }
+
+  // ---------- TABS ----------
+  root.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      root.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      const which = tab.dataset.tab;
+      root.querySelector('#tab-registro').style.display = which === 'registro' ? '' : 'none';
+      root.querySelector('#tab-historial').style.display = which === 'historial' ? '' : 'none';
+      root.querySelector('#tab-panel').style.display = which === 'panel' ? '' : 'none';
+      root.querySelector('#zonebar').style.display = which === 'panel' ? 'none' : '';
+      root.querySelector('#storageRow').style.display = which === 'registro' ? '' : 'none';
+      root.querySelector('#zoneStatus').style.display = which === 'registro' ? '' : 'none';
+      if(which === 'historial') renderHistory();
+      if(which === 'panel') renderPanel();
+    });
+  });
+
+  // ---------- HISTORY ----------
+  async function fetchRecordsForSubzone(loc, sub){
+    const subMap = await fbGet(`registros/${slug(loc)}/${sub.toLowerCase()}`);
+    return flattenSubzoneTree(subMap);
+  }
+
+  async function renderHistory(){
+    const loc = locationSelect.value;
+    const sub = subzoneSelect.value;
+    const listEl = root.querySelector('#histList');
+    const emptyEl = root.querySelector('#histEmpty');
+    const trendBox = root.querySelector('#trendBox');
+    const trendRow = root.querySelector('#trendRow');
+    listEl.innerHTML = '<div class="empty">Cargando…</div>';
+    trendBox.style.display = 'none';
+
+    const records = await fetchRecordsForSubzone(loc, sub);
+    records.sort((a,b) => b.timestamp - a.timestamp);
+
+    if(records.length === 0){
+      listEl.innerHTML = '';
+      emptyEl.style.display = '';
+      return;
+    }
+    emptyEl.style.display = 'none';
+
+    // trend (last 8, chronological)
+    const trendData = records.slice(0,8).reverse();
+    if(trendData.length > 1){
+      trendBox.style.display = '';
+      trendRow.innerHTML = trendData.map(r => {
+        const h = Math.max(6, Math.round(r.pct * 0.6));
+        const color = r.pct>=90?'var(--green)':(r.pct>=70?'var(--yellow)':'var(--red)');
+        return `<div class="trend-bar" style="height:${h}px; background:${color};"><span>${r.pct}%</span></div>`;
+      }).join('');
+    }
+
+    listEl.innerHTML = records.map((r, idx) => {
+      const cls = r.pct >= 90 ? 'green' : (r.pct >= 70 ? 'yellow' : 'red');
+      const label = r.pct >= 90 ? 'SOSTENIBLE' : (r.pct >= 70 ? 'EN CONSOLIDACIÓN' : 'REQUIERE REFUERZO');
+      const detailRows = r.detail.map(it => {
+        const v = it.valor;
+        const sc = v===2?'g':'r';
+        const txt = v===2?'Cumple':'No cumple';
+        const photo = it.foto ? `<img src="${it.foto}" class="hist-photo" alt="Evidencia fotográfica">` : '';
+        const obs = it.obs ? `<div class="hist-obs">"${it.obs}"</div>` : '';
+        return `<div style="margin-bottom:8px;"><div class="hist-item-row"><div class="t">${it.texto}</div><div class="s ${sc}">${txt}</div></div>${photo}${obs}</div>`;
+      }).join('');
+
+      return `
+        <div class="hist-card">
+          <div class="hist-top">
+            <div>
+              <div class="hist-pct">${r.pct}%</div>
+              <div class="hist-badge ${cls}">${label}</div>
+            </div>
+            <div class="hist-meta">
+              <strong style="color:var(--ink);">${(r.zoneName||'').split(' – ')[2] || ''}</strong><br>
+              ${r.fecha}<br>${r.auditor}
+            </div>
+          </div>
+          <div class="hist-toggle" data-idx="${idx}">Ver detalle ▾</div>
+          <div class="hist-detail" id="histdetail-${idx}">${detailRows}</div>
+        </div>
+      `;
+    }).join('');
+
+    listEl.querySelectorAll('.hist-toggle').forEach(t => {
+      t.addEventListener('click', () => {
+        const idx = t.dataset.idx;
+        const d = root.querySelector('#histdetail-'+idx);
+        d.classList.toggle('open');
+        t.textContent = d.classList.contains('open') ? 'Ocultar detalle ▴' : 'Ver detalle ▾';
+      });
+    });
+
+    listEl.querySelectorAll('.hist-photo').forEach(img => {
+      img.addEventListener('click', () => {
+        root.querySelector('#photoModalImg').src = img.src;
+        root.querySelector('#photoModal').classList.add('open');
+      });
+    });
+  }
+
+  // ---------- PHOTO MODAL ----------
+  root.querySelector('#photoModalClose').addEventListener('click', () => {
+    root.querySelector('#photoModal').classList.remove('open');
+    root.querySelector('#photoModalImg').src = '';
+  });
+  root.querySelector('#photoModal').addEventListener('click', (e) => {
+    if(e.target.id === 'photoModal'){
+      root.querySelector('#photoModal').classList.remove('open');
+      root.querySelector('#photoModalImg').src = '';
+    }
+  });
+
+  // ---------- QR MODAL ----------
+  const APP_URL = 'https://diegofuentesescobar.github.io/evaluacion-5S-warehouse/';
+  root.querySelector('#showQr').addEventListener('click', () => {
+    const canvasHolder = root.querySelector('#qrcanvas');
+    canvasHolder.innerHTML = '';
+    try{
+      new QRCode(canvasHolder, {
+        text: APP_URL,
+        width: 160, height: 160,
+        colorDark:'#161616', colorLight:'#ffffff'
+      });
+    }catch(e){
+      canvasHolder.textContent = APP_URL;
+    }
+    root.querySelector('#qrModal').classList.add('open');
+  });
+  root.querySelector('#qrClose').addEventListener('click', () => {
+    root.querySelector('#qrModal').classList.remove('open');
+  });
+
+  // ---------- PANEL DE CONTROL ----------
+  let panelPeriod = 'q';
+  let panelCharts = {};
+
+  const panelLocationFilter = root.querySelector('#panelLocationFilter');
+  panelLocationFilter.innerHTML = '<option value="__all__">Todas las ubicaciones</option>' +
+    LOCATIONS.map(l => `<option value="${l}">${l}</option>`).join('');
+
+  const panelSubzoneFilter = root.querySelector('#panelSubzoneFilter');
+  function renderPanelSubzoneOptions(){
+    const loc = panelLocationFilter.value;
+    let letters;
+    if(loc === '__all__'){
+      const set = new Set();
+      Object.values(LOCATIONS_CONFIG).forEach(arr => arr.forEach(l => set.add(l)));
+      letters = Array.from(set).sort();
+    }else{
+      letters = LOCATIONS_CONFIG[loc] || [];
+    }
+    panelSubzoneFilter.innerHTML = '<option value="__all__">Todas las subzonas</option>' +
+      letters.map(l => `<option value="${l}">Zona ${l}</option>`).join('');
+  }
+  renderPanelSubzoneOptions();
+  panelSubzoneFilter.addEventListener('change', renderPanel);
+
+  root.querySelectorAll('.period-pill').forEach(p => {
+    p.addEventListener('click', () => {
+      root.querySelectorAll('.period-pill').forEach(x => x.classList.remove('active'));
+      p.classList.add('active');
+      panelPeriod = p.dataset.p;
+      root.querySelector('#customRange').style.display = panelPeriod === 'c' ? 'flex' : 'none';
+      if(panelPeriod !== 'c' || (root.querySelector('#dateFrom').value && root.querySelector('#dateTo').value)){
+        renderPanel();
+      }
+    });
+  });
+  root.querySelector('#dateFrom').addEventListener('change', () => { if(panelPeriod==='c') renderPanel(); });
+  root.querySelector('#dateTo').addEventListener('change', () => { if(panelPeriod==='c') renderPanel(); });
+  panelLocationFilter.addEventListener('change', () => {
+    renderPanelSubzoneOptions();
+    renderPanel();
+  });
+
+  function getPeriodRange(){
+    const now = Date.now();
+    const DAY = 86400000;
+    if(panelPeriod === 'w') return {start: now - 7*DAY, end: now};
+    if(panelPeriod === 'q') return {start: now - 91*DAY, end: now};
+    if(panelPeriod === 's') return {start: now - 182*DAY, end: now};
+    if(panelPeriod === 'y') return {start: now - 365*DAY, end: now};
+    // custom
+    const from = root.querySelector('#dateFrom').value;
+    const to = root.querySelector('#dateTo').value;
+    const start = from ? new Date(from+'T00:00:00').getTime() : 0;
+    const end = to ? new Date(to+'T23:59:59').getTime() : now;
+    return {start, end};
+  }
+
+  async function fetchAllRecords(){
+    const tree = await fbGet('registros');
+    return flattenFullTree(tree);
+  }
+
+  function locationOf(record){
+    return LOCATIONS.find(l => record.zoneName && record.zoneName.indexOf(l) === 0) || 'Otra';
+  }
+  function letterOf(record){
+    const m = record.zoneName && record.zoneName.match(/Zona\s(\w)/);
+    return m ? m[1] : null;
+  }
+  function subzoneLabelOf(record){
+    const l = letterOf(record);
+    const loc = locationOf(record);
+    return l ? `${loc} – Zona ${l}` : loc;
+  }
+
+  const CHART_IDS = ['chartTrend','chartLocations','chartCriteria','chartVolume'];
+
+  function destroyCharts(){
+    Object.values(panelCharts).forEach(c => { try{ c.destroy(); }catch(e){} });
+    panelCharts = {};
+  }
+
+  function resetChartWraps(){
+    CHART_IDS.forEach(id => {
+      const wrap = root.querySelector('#wrap-'+id);
+      if(wrap) wrap.innerHTML = `<canvas id="${id}"></canvas>`;
+    });
+  }
+
+  async function renderPanel(){
+    const all = await fetchAllRecords();
+    const {start, end} = getPeriodRange();
+    const locFilter = panelLocationFilter.value;
+    const subFilter = panelSubzoneFilter.value;
+    let filtered = all.filter(r => r.timestamp >= start && r.timestamp <= end);
+    if(locFilter !== '__all__'){
+      filtered = filtered.filter(r => locationOf(r) === locFilter);
+    }
+    if(subFilter !== '__all__'){
+      filtered = filtered.filter(r => letterOf(r) === subFilter);
+    }
+
+    const emptyEl = root.querySelector('#panelEmpty');
+    const kpiGrid = root.querySelector('#kpiGrid');
+    destroyCharts();
+    resetChartWraps();
+
+    if(filtered.length === 0){
+      emptyEl.style.display = '';
+      kpiGrid.innerHTML = '';
+      return;
+    }
+    emptyEl.style.display = 'none';
+
+    // ---- KPIs ----
+    const totalEval = filtered.length;
+    const avgPct = Math.round(filtered.reduce((s,r) => s+r.pct, 0) / totalEval);
+
+    const byLocPct = {};
+    LOCATIONS.forEach(l => {
+      const recs = filtered.filter(r => locationOf(r) === l);
+      if(recs.length) byLocPct[l] = Math.round(recs.reduce((s,r)=>s+r.pct,0)/recs.length);
+    });
+    const bestLoc = Object.entries(byLocPct).sort((a,b)=>b[1]-a[1])[0];
+
+    const critFailMap = {};
+    filtered.forEach(r => {
+      (r.detail||[]).forEach(it => {
+        if(it.valor === 0) critFailMap[it.texto] = (critFailMap[it.texto]||0) + 1;
+      });
+    });
+    const critRanked = Object.entries(critFailMap)
+      .map(([texto,count]) => ({texto, count, label: CRITERIA_LABELS[texto] || '?'}))
+      .sort((a,b) => b.count - a.count);
+    const topCrit = critRanked[0];
+
+    kpiGrid.innerHTML = `
+      <div class="kpi-card"><div class="kpi-val">${totalEval}</div><div class="kpi-label">Evaluaciones en el periodo</div></div>
+      <div class="kpi-card"><div class="kpi-val">${avgPct}%</div><div class="kpi-label">Cumplimiento promedio</div></div>
+      <div class="kpi-card"><div class="kpi-val">${bestLoc ? bestLoc[1]+'%' : '–'}</div><div class="kpi-label">Mejor ubicación${bestLoc ? ': '+bestLoc[0] : ''}</div></div>
+      <div class="kpi-card"><div class="kpi-val">${topCrit ? topCrit.count : 0}</div><div class="kpi-label">Incumplimientos — Criterio ${topCrit ? topCrit.label : '–'}</div></div>
+    `;
+
+    const gridColor = 'rgba(28,28,28,0.08)';
+    const tickColor = '#78746F';
+    const DAY_MS = 86400000;
+    if(typeof Chart !== 'undefined'){
+      Chart.defaults.font.family = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif";
+      Chart.defaults.color = tickColor;
+    }
+
+    function renderChartSafe(key, canvasId, config){
+      const canvas = root.querySelector('#'+canvasId);
+      if(!canvas) return;
+      const wrap = canvas.parentElement;
+      try{
+        if(typeof Chart === 'undefined') throw new Error('Chart.js no disponible');
+        panelCharts[key] = new Chart(canvas, config);
+      }catch(e){
+        console.error('Error al crear gráfico', canvasId, e);
+        wrap.innerHTML = '<div class="chart-empty-msg">No se pudo cargar este gráfico: ' + (e && e.message ? e.message : 'error desconocido') + '</div>';
+      }
+    }
+
+    // ---- CHART 1: Tendencia en el tiempo (bucket adaptativo) ----
+    const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const rangeDays = (end - start) / DAY_MS;
+    let bucketMode;
+    if(panelPeriod === 'w' || rangeDays <= 14) bucketMode = 'day';
+    else if(rangeDays <= 120) bucketMode = 'week';
+    else bucketMode = 'month';
+
+    function weekKeyOf(d){
+      // ISO-ish week key: year + week number (Monday-based)
+      const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+      const dayNum = (date.getUTCDay() + 6) % 7;
+      date.setUTCDate(date.getUTCDate() - dayNum + 3);
+      const firstThursday = new Date(Date.UTC(date.getUTCFullYear(),0,4));
+      const week = 1 + Math.round(((date - firstThursday) / DAY_MS - 3 + ((firstThursday.getUTCDay()+6)%7)) / 7);
+      return date.getUTCFullYear()+'-W'+String(week).padStart(2,'0');
+    }
+    function bucketKeyOf(ts){
+      const d = new Date(ts);
+      if(bucketMode === 'day') return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+      if(bucketMode === 'week') return weekKeyOf(d);
+      return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    }
+    function bucketLabelOf(key){
+      if(bucketMode === 'day'){
+        const [y,m,dd] = key.split('-');
+        return dd+' '+MESES[parseInt(m)-1];
+      }
+      if(bucketMode === 'week'){
+        const [y,w] = key.split('-W');
+        return 'Sem '+w;
+      }
+      const [y,m] = key.split('-');
+      return MESES[parseInt(m)-1] + ' ' + y.slice(2);
+    }
+
+    const byBucket = {};
+    filtered.forEach(r => {
+      const key = bucketKeyOf(r.timestamp);
+      if(!byBucket[key]) byBucket[key] = [];
+      byBucket[key].push(r.pct);
+    });
+    const bucketKeys = Object.keys(byBucket).sort();
+    const bucketLabels = bucketKeys.map(bucketLabelOf);
+    const bucketAvg = bucketKeys.map(k => Math.round(byBucket[k].reduce((s,v)=>s+v,0)/byBucket[k].length));
+
+    renderChartSafe('trend', 'chartTrend', {
+      type: 'line',
+      data: {
+        labels: bucketLabels,
+        datasets: [{
+          label: '% cumplimiento',
+          data: bucketAvg,
+          borderColor: '#E35302',
+          backgroundColor: 'rgba(227,83,2,0.12)',
+          fill: true,
+          tension: 0.3,
+          pointBackgroundColor: '#E35302',
+          pointRadius: 5,
+          pointHoverRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { min:0, max:100, ticks:{callback:v=>v+'%'}, grid:{color:gridColor} },
+          x: { grid:{display:false} }
+        }
+      }
+    });
+
+    // ---- CHART 2: % cumplimiento por ubicación ----
+    const locLabels = Object.keys(byLocPct);
+    const locVals = locLabels.map(l => byLocPct[l]);
+    renderChartSafe('locations', 'chartLocations', {
+      type: 'bar',
+      data: {
+        labels: locLabels,
+        datasets: [{
+          data: locVals,
+          backgroundColor: locVals.map(v => v>=90 ? '#2E8B4F' : (v>=70 ? '#B8860B' : '#C43A2F')),
+          borderRadius: 5,
+          maxBarThickness: 34
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { min:0, max:100, ticks:{callback:v=>v+'%'}, grid:{color:gridColor} },
+          y: { grid:{display:false} }
+        }
+      }
+    });
+
+    // ---- CHART 3: Criterios con más incumplimientos ----
+    const critTop = critRanked.slice(0, 10);
+    renderChartSafe('criteria', 'chartCriteria', {
+      type: 'bar',
+      data: {
+        labels: critTop.map(o => o.label),
+        datasets: [{
+          data: critTop.map(o => o.count),
+          backgroundColor: '#C43A2F',
+          borderRadius: 5,
+          maxBarThickness: 26
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { title: (items) => critTop[items[0].dataIndex].texto } }
+        },
+        scales: {
+          x: { beginAtZero:true, ticks:{precision:0}, grid:{color:gridColor} },
+          y: { grid:{display:false} }
+        }
+      }
+    });
+
+    // ---- CHART 4: Volumen de evaluaciones por subzona ----
+    const bySub = {};
+    filtered.forEach(r => {
+      const key = subzoneLabelOf(r);
+      bySub[key] = (bySub[key]||0) + 1;
+    });
+    const subEntries = Object.entries(bySub).sort((a,b)=>b[1]-a[1]).slice(0,10);
+    renderChartSafe('volume', 'chartVolume', {
+      type: 'bar',
+      data: {
+        labels: subEntries.map(e => e[0]),
+        datasets: [{
+          data: subEntries.map(e => e[1]),
+          backgroundColor: '#E35302',
+          borderRadius: 5,
+          maxBarThickness: 26
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { beginAtZero:true, ticks:{precision:0}, grid:{color:gridColor} },
+          y: { grid:{display:false} }
+        }
+      }
+    });
+  }
+
+  // ---------- ZONE CHANGE ----------
+  function onZoneChange(){
+    resetAnswers();
+    renderSections();
+    updateSummary();
+    loadZoneStatus();
+    loadSubzoneCount();
+    if(root.querySelector('.tab[data-tab="historial"]').classList.contains('active')){
+      renderHistory();
+    }
+  }
+
+  // ---------- INIT ----------
+  (function init(){
+    initLocationSelects();
+    resetAnswers();
+    renderSections();
+    updateSummary();
+    loadZoneStatus();
+    loadSubzoneCount();
+  })();
+})();
+</script>
