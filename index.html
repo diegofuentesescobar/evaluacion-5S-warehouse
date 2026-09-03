@@ -561,6 +561,21 @@
     font-weight:700;
     margin-bottom:12px;
   }
+  #p5s .chart-canvas-wrap{
+    position:relative;
+    width:100%;
+    height:220px;
+  }
+  #p5s .chart-canvas-wrap canvas{
+    width:100% !important;
+    height:100% !important;
+  }
+  #p5s .chart-empty-msg{
+    color:var(--ink-dim2);
+    font-size:12.5px;
+    text-align:center;
+    padding:30px 10px;
+  }
 
   #p5s .qr-modal{
     display:none;
@@ -697,22 +712,22 @@
 
     <div class="chart-box">
       <div class="chart-title">TENDENCIA DE CUMPLIMIENTO EN EL TIEMPO</div>
-      <canvas id="chartTrend" height="180"></canvas>
+      <div class="chart-canvas-wrap" id="wrap-chartTrend"><canvas id="chartTrend"></canvas></div>
     </div>
 
     <div class="chart-box">
       <div class="chart-title">% CUMPLIMIENTO POR UBICACIÓN</div>
-      <canvas id="chartLocations" height="200"></canvas>
+      <div class="chart-canvas-wrap" id="wrap-chartLocations"><canvas id="chartLocations"></canvas></div>
     </div>
 
     <div class="chart-box">
       <div class="chart-title">CRITERIOS CON MÁS INCUMPLIMIENTOS (P = Patio, B = Bodega)</div>
-      <canvas id="chartCriteria" height="230"></canvas>
+      <div class="chart-canvas-wrap" id="wrap-chartCriteria"><canvas id="chartCriteria"></canvas></div>
     </div>
 
     <div class="chart-box">
       <div class="chart-title">VOLUMEN DE EVALUACIONES POR SUBZONA</div>
-      <canvas id="chartVolume" height="200"></canvas>
+      <div class="chart-canvas-wrap" id="wrap-chartVolume"><canvas id="chartVolume"></canvas></div>
     </div>
 
     <div class="empty" id="panelEmpty" style="display:none;">Aún no hay evaluaciones registradas en el periodo seleccionado.</div>
@@ -1286,9 +1301,18 @@
     return l ? `${loc} – Zona ${l}` : loc;
   }
 
+  const CHART_IDS = ['chartTrend','chartLocations','chartCriteria','chartVolume'];
+
   function destroyCharts(){
     Object.values(panelCharts).forEach(c => { try{ c.destroy(); }catch(e){} });
     panelCharts = {};
+  }
+
+  function resetChartWraps(){
+    CHART_IDS.forEach(id => {
+      const wrap = root.querySelector('#wrap-'+id);
+      if(wrap) wrap.innerHTML = `<canvas id="${id}"></canvas>`;
+    });
   }
 
   async function renderPanel(){
@@ -1307,13 +1331,11 @@
     const emptyEl = root.querySelector('#panelEmpty');
     const kpiGrid = root.querySelector('#kpiGrid');
     destroyCharts();
+    resetChartWraps();
 
     if(filtered.length === 0){
       emptyEl.style.display = '';
       kpiGrid.innerHTML = '';
-      ['chartTrend','chartLocations','chartCriteria','chartVolume'].forEach(id => {
-        root.querySelector('#'+id).getContext('2d').clearRect(0,0,9999,9999);
-      });
       return;
     }
     emptyEl.style.display = 'none';
@@ -1350,8 +1372,22 @@
     const gridColor = 'rgba(28,28,28,0.08)';
     const tickColor = '#78746F';
     const DAY_MS = 86400000;
-    Chart.defaults.font.family = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif";
-    Chart.defaults.color = tickColor;
+    if(typeof Chart !== 'undefined'){
+      Chart.defaults.font.family = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif";
+      Chart.defaults.color = tickColor;
+    }
+
+    function renderChartSafe(key, canvasId, config){
+      const canvas = root.querySelector('#'+canvasId);
+      if(!canvas) return;
+      const wrap = canvas.parentElement;
+      try{
+        if(typeof Chart === 'undefined') throw new Error('Chart.js no disponible');
+        panelCharts[key] = new Chart(canvas, config);
+      }catch(e){
+        wrap.innerHTML = '<div class="chart-empty-msg">No se pudo cargar este gráfico. Revisa tu conexión a internet y vuelve a intentar.</div>';
+      }
+    }
 
     // ---- CHART 1: Tendencia en el tiempo (bucket adaptativo) ----
     const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -1399,7 +1435,7 @@
     const bucketLabels = bucketKeys.map(bucketLabelOf);
     const bucketAvg = bucketKeys.map(k => Math.round(byBucket[k].reduce((s,v)=>s+v,0)/byBucket[k].length));
 
-    panelCharts.trend = new Chart(root.querySelector('#chartTrend'), {
+    renderChartSafe('trend', 'chartTrend', {
       type: 'line',
       data: {
         labels: bucketLabels,
@@ -1411,11 +1447,13 @@
           fill: true,
           tension: 0.3,
           pointBackgroundColor: '#E35302',
-          pointRadius: 4
+          pointRadius: 5,
+          pointHoverRadius: 6
         }]
       },
       options: {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
           y: { min:0, max:100, ticks:{callback:v=>v+'%'}, grid:{color:gridColor} },
@@ -1427,7 +1465,7 @@
     // ---- CHART 2: % cumplimiento por ubicación ----
     const locLabels = Object.keys(byLocPct);
     const locVals = locLabels.map(l => byLocPct[l]);
-    panelCharts.locations = new Chart(root.querySelector('#chartLocations'), {
+    renderChartSafe('locations', 'chartLocations', {
       type: 'bar',
       data: {
         labels: locLabels,
@@ -1441,6 +1479,7 @@
       options: {
         indexAxis: 'y',
         responsive: true,
+        maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
           x: { min:0, max:100, ticks:{callback:v=>v+'%'}, grid:{color:gridColor} },
@@ -1451,7 +1490,7 @@
 
     // ---- CHART 3: Criterios con más incumplimientos ----
     const critTop = critRanked.slice(0, 10);
-    panelCharts.criteria = new Chart(root.querySelector('#chartCriteria'), {
+    renderChartSafe('criteria', 'chartCriteria', {
       type: 'bar',
       data: {
         labels: critTop.map(o => o.label),
@@ -1465,6 +1504,7 @@
       options: {
         indexAxis: 'y',
         responsive: true,
+        maintainAspectRatio: false,
         plugins: {
           legend: { display: false },
           tooltip: { callbacks: { title: (items) => critTop[items[0].dataIndex].texto } }
@@ -1483,7 +1523,7 @@
       bySub[key] = (bySub[key]||0) + 1;
     });
     const subEntries = Object.entries(bySub).sort((a,b)=>b[1]-a[1]).slice(0,10);
-    panelCharts.volume = new Chart(root.querySelector('#chartVolume'), {
+    renderChartSafe('volume', 'chartVolume', {
       type: 'bar',
       data: {
         labels: subEntries.map(e => e[0]),
@@ -1497,6 +1537,7 @@
       options: {
         indexAxis: 'y',
         responsive: true,
+        maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
           x: { beginAtZero:true, ticks:{precision:0}, grid:{color:gridColor} },
